@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="mk">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<title>Подреди ги броевите</title>
+<style>
+  :root{--bg1:#eef7ff;--bg2:#fff8e8;--ink:#18324a;--accent:#5b7cfa;--good:#1f9d63;--bad:#d94b4b;--card:#fff}
+  *{box-sizing:border-box} html,body{margin:0;height:100%;overflow:hidden;font-family:Arial,Helvetica,sans-serif;color:var(--ink)}
+  body{background:linear-gradient(135deg,var(--bg1),var(--bg2));touch-action:none}
+  .app{height:100vh;display:grid;grid-template-rows:auto auto 1fr auto;gap:10px;padding:16px 20px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  h1{margin:0;font-size:clamp(28px,4vw,54px)}
+  .rounds{display:flex;gap:8px}.dot{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#fff;border:2px solid #c7d2e3;font-weight:700}
+  .dot.active{background:var(--accent);color:#fff;border-color:var(--accent)}.dot.done{background:var(--good);color:#fff;border-color:var(--good)}
+  .instruction{background:rgba(255,255,255,.85);border:2px solid #dbe7f5;border-radius:18px;padding:10px 18px;font-size:clamp(20px,2.5vw,32px);font-weight:700;text-align:center}
+  .board{min-height:0;display:grid;grid-template-rows:1fr 1.15fr;gap:12px}
+  .tray,.slots-wrap{background:rgba(255,255,255,.68);border:2px dashed #b7c8dc;border-radius:22px;padding:14px}
+  .tray{display:flex;align-items:center;justify-content:center;gap:clamp(8px,1.5vw,20px);flex-wrap:nowrap}
+  .slots-wrap{display:flex;flex-direction:column;justify-content:center}.labels{display:flex;justify-content:space-between;font-weight:700;font-size:clamp(16px,2vw,24px);margin:0 10px 8px}
+  .slots{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(8px,1.4vw,18px);min-height:110px}
+  .slot{min-height:100px;border:3px solid #9fb5ce;border-radius:18px;background:rgba(255,255,255,.55);display:grid;place-items:center;position:relative}
+  .slot::after{content:attr(data-pos);position:absolute;bottom:6px;right:9px;font-size:15px;color:#7d8da0;font-weight:700}
+  .card{width:clamp(120px,16vw,220px);height:clamp(76px,11vh,112px);border-radius:20px;background:var(--card);border:3px solid #9bb1c8;box-shadow:0 8px 18px rgba(35,61,88,.12);display:grid;place-items:center;font-size:clamp(30px,4vw,52px);font-weight:800;cursor:grab;user-select:none;touch-action:none;transition:.12s;position:relative;z-index:2}
+  .card.selected{border-color:var(--accent);box-shadow:0 0 0 5px rgba(91,124,250,.18)}.card.correct{border-color:var(--good);background:#effcf5}.card.wrong{border-color:var(--bad);background:#fff2f2}
+  .floating{position:fixed!important;margin:0!important;pointer-events:none;z-index:9999;transform:scale(1.05);box-shadow:0 18px 35px rgba(35,61,88,.25)}
+  footer{display:flex;justify-content:center;align-items:center;gap:14px}button{border:0;border-radius:16px;padding:12px 24px;font-size:clamp(18px,2vw,25px);font-weight:800;cursor:pointer;background:#fff;color:var(--ink);box-shadow:0 5px 14px rgba(35,61,88,.12)}
+  button.primary{background:var(--accent);color:#fff}button.success{background:var(--good);color:#fff}.message{min-width:260px;text-align:center;font-size:clamp(18px,2vw,26px);font-weight:800}
+  @media(max-width:900px){.app{padding:10px}.rounds{gap:4px}.dot{width:28px;height:28px;font-size:14px}.card{width:17vw}.slots{gap:7px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header><h1>🔢 Подреди ги броевите</h1><div class="rounds" id="rounds"></div></header>
+  <div class="instruction" id="instruction"></div>
+  <main class="board">
+    <section class="tray" id="tray"></section>
+    <section class="slots-wrap"><div class="labels"><span id="leftLabel"></span><span id="rightLabel"></span></div><div class="slots" id="slots"></div></section>
+  </main>
+  <footer><button id="resetBtn">↺ Повтори</button><div class="message" id="message">Повлечи ги броевите во полињата.</div><button class="primary" id="checkBtn">✓ Провери</button><button class="success" id="nextBtn" style="display:none">Следна низа →</button></footer>
+</div>
+<script>
+const rounds=[
+ {dir:'asc',nums:[248,513,976,1240,1865]},
+ {dir:'desc',nums:[1740,1035,999,642,318]},
+ {dir:'asc',nums:[407,758,890,1112,1504]},
+ {dir:'desc',nums:[1980,1260,945,630,275]},
+ {dir:'asc',nums:[329,701,998,1004,1420]}
+];
+let round=0,selected=null,solved=Array(rounds.length).fill(false);
+const tray=document.getElementById('tray'),slots=document.getElementById('slots'),instruction=document.getElementById('instruction'),message=document.getElementById('message'),checkBtn=document.getElementById('checkBtn'),nextBtn=document.getElementById('nextBtn'),resetBtn=document.getElementById('resetBtn'),roundsEl=document.getElementById('rounds'),leftLabel=document.getElementById('leftLabel'),rightLabel=document.getElementById('rightLabel');
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function renderDots(){roundsEl.innerHTML='';rounds.forEach((_,i)=>{const d=document.createElement('div');d.className='dot'+(i===round?' active':'')+(solved[i]?' done':'');d.textContent=i+1;roundsEl.appendChild(d)})}
+function makeCard(n){const c=document.createElement('div');c.className='card';c.textContent=n;c.dataset.value=n;c.addEventListener('click',()=>{if(selected===c){c.classList.remove('selected');selected=null;return}document.querySelectorAll('.card').forEach(x=>x.classList.remove('selected'));selected=c;c.classList.add('selected')});enablePointerDrag(c);return c}
+function setupRound(){selected=null;renderDots();const r=rounds[round];instruction.textContent=r.dir==='asc'?'Нареди од НАЈМАЛ кон НАЈГОЛЕМ број.':'Нареди од НАЈГОЛЕМ кон НАЈМАЛ број.';leftLabel.textContent=r.dir==='asc'?'НАЈМАЛ':'НАЈГОЛЕМ';rightLabel.textContent=r.dir==='asc'?'НАЈГОЛЕМ':'НАЈМАЛ';tray.innerHTML='';slots.innerHTML='';shuffle(r.nums).forEach(n=>tray.appendChild(makeCard(n)));for(let i=0;i<5;i++){const s=document.createElement('div');s.className='slot';s.dataset.pos=i+1;s.addEventListener('click',()=>placeSelected(s));slots.appendChild(s)}message.textContent='Повлечи ги броевите во полињата.';checkBtn.style.display='';nextBtn.style.display='none'}
+function placeSelected(slot){if(!selected)return;const current=slot.querySelector('.card'),oldParent=selected.parentElement;if(current){if(oldParent.classList.contains('slot'))oldParent.appendChild(current);else tray.appendChild(current)}slot.appendChild(selected);selected.classList.remove('selected');selected=null;clearMarks()}
+function clearMarks(){document.querySelectorAll('.card').forEach(c=>c.classList.remove('correct','wrong'))}
+function expected(){const r=rounds[round];return [...r.nums].sort((a,b)=>r.dir==='asc'?a-b:b-a)}
+checkBtn.addEventListener('click',()=>{const cards=[...slots.children].map(s=>s.querySelector('.card'));if(cards.some(c=>!c)){message.textContent='Прво пополни ги сите 5 места.';return}const exp=expected();let ok=true;cards.forEach((c,i)=>{if(+c.dataset.value===exp[i])c.classList.add('correct');else{c.classList.add('wrong');ok=false}});if(ok){solved[round]=true;renderDots();message.textContent='🎉 Точно! Одлично подредено!';checkBtn.style.display='none';nextBtn.style.display='';nextBtn.textContent=round===rounds.length-1?'Играј од почеток ↺':'Следна низа →'}else message.textContent='Има грешка. Поправете ги црвените броеви.'});
+nextBtn.addEventListener('click',()=>{if(round===rounds.length-1){round=0;solved=Array(rounds.length).fill(false)}else round++;setupRound()});resetBtn.addEventListener('click',setupRound);
+function enablePointerDrag(card){let dragging=false,startX=0,startY=0,originParent=null,placeholder=null,offX=0,offY=0;card.addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;dragging=false;startX=e.clientX;startY=e.clientY;originParent=card.parentElement;const rect=card.getBoundingClientRect();offX=e.clientX-rect.left;offY=e.clientY-rect.top;card.setPointerCapture?.(e.pointerId)});card.addEventListener('pointermove',e=>{if(!originParent)return;const dx=e.clientX-startX,dy=e.clientY-startY;if(!dragging&&Math.hypot(dx,dy)>8){dragging=true;placeholder=document.createElement('div');placeholder.style.width=card.offsetWidth+'px';placeholder.style.height=card.offsetHeight+'px';if(originParent.classList.contains('slot'))originParent.appendChild(placeholder);else originParent.insertBefore(placeholder,card);document.body.appendChild(card);card.classList.add('floating')}if(dragging){card.style.left=(e.clientX-offX)+'px';card.style.top=(e.clientY-offY)+'px';card.style.width=placeholder?placeholder.offsetWidth+'px':'';card.style.height=placeholder?placeholder.offsetHeight+'px':''}});card.addEventListener('pointerup',e=>{if(!originParent)return;if(dragging){const targets=[...document.querySelectorAll('.slot')];const hit=targets.find(s=>{const r=s.getBoundingClientRect();return e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom});card.classList.remove('floating');card.style.left=card.style.top=card.style.width=card.style.height='';if(hit){const existing=hit.querySelector('.card');if(existing&&existing!==card){if(originParent.classList.contains('slot'))originParent.appendChild(existing);else tray.appendChild(existing)}hit.appendChild(card)}else{if(originParent.classList.contains('slot'))originParent.appendChild(card);else tray.appendChild(card)}placeholder?.remove();clearMarks()}originParent=null;placeholder=null;dragging=false})}
+setupRound();
+</script>
+</body>
+</html>
