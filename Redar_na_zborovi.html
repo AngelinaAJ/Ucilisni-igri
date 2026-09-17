@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="mk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#17324d">
+  <title>Кој збор е правилно поделен на слогови</title>
+  <style>
+    :root {
+      --navy: #17324d;
+      --paper: #fffdf7;
+      --sky: #eaf5fb;
+      --orange: #f4a340;
+      --green: #1f8a5b;
+      --red: #bd3b3b;
+      --ink: #14212b;
+      --muted: #5d6b76;
+      --line: #cadbe6;
+      --shadow: 0 20px 48px rgba(23, 50, 77, .18);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: Arial, "Noto Sans", sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(244, 163, 64, .20), transparent 28%),
+        radial-gradient(circle at 90% 90%, rgba(68, 154, 201, .20), transparent 30%),
+        linear-gradient(135deg, #f6fbfe 0%, #fffaf0 100%);
+    }
+
+    button { font: inherit; }
+
+    .app {
+      width: min(1180px, 96vw);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: clamp(14px, 2.5vw, 30px) 0;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 16px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 14px; }
+
+    .badge {
+      width: 58px;
+      height: 58px;
+      border-radius: 17px;
+      display: grid;
+      place-items: center;
+      color: var(--navy);
+      background: var(--orange);
+      box-shadow: 0 10px 22px rgba(244, 163, 64, .3);
+      font-size: 25px;
+      font-weight: 900;
+    }
+
+    h1 {
+      margin: 0;
+      color: var(--navy);
+      font-size: clamp(24px, 3vw, 38px);
+      line-height: 1.06;
+    }
+
+    .subtitle {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: clamp(14px, 1.6vw, 18px);
+    }
+
+    .icon-button {
+      min-width: 50px;
+      min-height: 50px;
+      border: 2px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .86);
+      color: var(--navy);
+      cursor: pointer;
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .icon-button:hover,
+    .icon-button:focus-visible,
+    .primary:hover,
+    .primary:focus-visible,
+    .secondary:hover,
+    .secondary:focus-visible,
+    .choice:hover,
+    .choice:focus-visible {
+      outline: 4px solid rgba(244, 163, 64, .30);
+      transform: translateY(-2px);
+    }
+
+    main { display: grid; align-items: center; }
+
+    .card {
+      background: rgba(255, 253, 247, .97);
+      border: 1px solid rgba(202, 219, 230, .9);
+      border-radius: 30px;
+      padding: clamp(22px, 3.8vw, 46px);
+      box-shadow: var(--shadow);
+    }
+
+    .screen[hidden] { display: none; }
+    .intro, .finish { max-width: 900px; margin: 0 auto; text-align: center; }
+
+    .eyebrow {
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 999px;
+      color: var(--navy);
+      background: #ffe8c4;
+      font-weight: 800;
+    }
+
+    .intro h2, .finish h2 {
+      margin: 22px 0 14px;
+      color: var(--navy);
+      font-size: clamp(34px, 5.2vw, 62px);
+      line-height: 1.05;
+    }
+
+    .intro p, .finish p {
+      margin: 0 auto 20px;
+      max-width: 780px;
+      color: var(--muted);
+      font-size: clamp(18px, 2.1vw, 24px);
+      line-height: 1.42;
+    }
+
+    .rule-strip {
+      margin: 24px auto;
+      padding: 18px 22px;
+      border-left: 7px solid var(--orange);
+      border-radius: 14px;
+      background: var(--sky);
+      color: var(--navy);
+      text-align: left;
+      font-size: clamp(17px, 1.9vw, 22px);
+      line-height: 1.42;
+      font-weight: 700;
+    }
+
+    .turns {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      max-width: 680px;
+      margin: 0 auto 22px;
+    }
+
+    .turn {
+      padding: 11px 10px;
+      border: 2px solid var(--line);
+      border-radius: 14px;
+      color: var(--muted);
+      background: white;
+      font-weight: 800;
+    }
+
+    .turn.active {
+      border-color: var(--orange);
+      color: var(--navy);
+      background: #fff1d8;
+    }
+
+    .primary, .secondary, .choice {
+      border: 0;
+      border-radius: 18px;
+      cursor: pointer;
+      font-weight: 800;
+      transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+
+    .primary {
+      min-height: 62px;
+      padding: 15px 30px;
+      color: white;
+      background: var(--navy);
+      box-shadow: 0 12px 24px rgba(23, 50, 77, .24);
+      font-size: clamp(20px, 2vw, 25px);
+    }
+
+    .secondary {
+      min-height: 54px;
+      padding: 12px 22px;
+      color: var(--navy);
+      background: #edf4f8;
+      font-size: 18px;
+    }
+
+    .quiz-top {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 22px;
+      margin-bottom: 18px;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 9px;
+      color: var(--navy);
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .progress {
+      height: 14px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #dfeaf0;
+    }
+
+    .progress > div {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--orange), #ffc76e);
+      transition: width .25s ease;
+    }
+
+    .score {
+      padding: 12px 18px;
+      border-radius: 15px;
+      color: white;
+      background: var(--navy);
+      white-space: nowrap;
+      font-size: 19px;
+      font-weight: 900;
+    }
+
+    .question {
+      margin: 0 0 4px;
+      color: var(--muted);
+      text-align: center;
+      font-size: clamp(18px, 2vw, 22px);
+      font-weight: 700;
+    }
+
+    .word {
+      margin: 0 0 20px;
+      color: var(--navy);
+      text-align: center;
+      font-size: clamp(42px, 6.5vw, 76px);
+      font-weight: 900;
+      letter-spacing: .02em;
+    }
+
+    .choices {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .choice {
+      min-height: 142px;
+      padding: 18px;
+      border: 3px solid var(--line);
+      color: var(--navy);
+      background: white;
+      box-shadow: 0 9px 22px rgba(23, 50, 77, .10);
+    }
+
+    .syllables {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .syllable {
+      display: inline-grid;
+      min-width: 78px;
+      min-height: 65px;
+      padding: 10px 16px;
+      place-items: center;
+      border-radius: 15px;
+      color: var(--navy);
+      background: var(--sky);
+      font-size: clamp(24px, 3vw, 38px);
+      line-height: 1;
+    }
+
+    .syllable:nth-child(even) { background: #ffe9c5; }
+    .choice.correct { border-color: var(--green); background: #e6f7ef; }
+    .choice.wrong { border-color: var(--red); background: #fdeaea; }
+    .choice:disabled { cursor: default; transform: none; opacity: .70; }
+
+    .feedback {
+      min-height: 92px;
+      margin-top: 18px;
+      padding: 15px 20px;
+      border-radius: 16px;
+      color: var(--navy);
+      background: #f0f6f9;
+      font-size: clamp(17px, 1.8vw, 21px);
+      line-height: 1.4;
+    }
+
+    .feedback strong { display: block; margin-bottom: 4px; font-size: 1.12em; }
+    .feedback.good strong { color: var(--green); }
+    .feedback.bad strong { color: var(--red); }
+
+    .quiz-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px; }
+
+    .final-score {
+      display: inline-grid;
+      place-items: center;
+      width: 164px;
+      height: 164px;
+      margin: 12px auto 20px;
+      border: 12px solid #ffe1ad;
+      border-radius: 50%;
+      color: white;
+      background: var(--navy);
+      font-size: 44px;
+      font-weight: 900;
+      box-shadow: var(--shadow);
+    }
+
+    footer { color: var(--muted); text-align: center; font-size: 14px; }
+    .key-hint { margin-top: 13px; color: var(--muted); font-size: 14px; }
+
+    @media (max-width: 720px) {
+      .app { width: min(94vw, 620px); }
+      header { align-items: flex-start; }
+      .badge { width: 48px; height: 48px; }
+      .card { border-radius: 22px; }
+      .choices { grid-template-columns: 1fr; }
+      .choice { min-height: 108px; }
+      .quiz-top { grid-template-columns: 1fr; gap: 12px; }
+      .score { justify-self: end; }
+      .syllable { min-width: 62px; min-height: 54px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="badge" aria-hidden="true">СЛОГ</div>
+        <div>
+          <h1>Слоговен избор</h1>
+          <p class="subtitle">III одделение · Поделба на зборови на слогови</p>
+        </div>
+      </div>
+      <button class="icon-button" id="fullscreen" type="button" title="Цел екран" aria-label="Прикажи на цел екран">⛶</button>
+    </header>
+
+    <main>
+      <section class="card screen intro" id="intro">
+        <span class="eyebrow">10 зборови од учебникот</span>
+        <h2>Кој збор е правилно поделен на слогови?</h2>
+        <p>Прочитајте го зборот бавно, плеснете за секој слог и допрете ја правилната поделба.</p>
+        <div class="turns" aria-label="Редослед на учениците">
+          <div class="turn active">Ученик 1</div>
+          <div class="turn">Ученик 2</div>
+          <div class="turn">Ученик 3</div>
+        </div>
+        <div class="rule-strip">Секој ученик решава по еден збор. Ако одговорот е неточен, заедно прочитајте го советот и обидете се повторно. Обоените полиња ги покажуваат слоговите, а не редови за пишување.</div>
+        <button class="primary" id="start" type="button">Почни ја играта</button>
+        <div class="key-hint">На панел: допри го одговорот. Со тастатура: 1 или 2.</div>
+      </section>
+
+      <section class="card screen" id="quiz" hidden aria-labelledby="questionText">
+        <div class="quiz-top">
+          <div>
+            <div class="progress-label"><span id="roundLabel">Збор 1 од 10</span><span id="turnLabel">На ред е ученик 1</span></div>
+            <div class="progress" aria-hidden="true"><div id="progressBar"></div></div>
+          </div>
+          <div class="score" id="scoreLabel">Точно од првпат: 0</div>
+        </div>
+        <p class="question" id="questionText">Која поделба на слогови е правилна?</p>
+        <div class="word" id="word">рака</div>
+        <div class="choices" id="choices"></div>
+        <div class="feedback" id="feedback" aria-live="polite">Кажи го зборот бавно, па избери.</div>
+        <div class="quiz-actions">
+          <button class="secondary" id="restart" type="button">Од почеток</button>
+          <button class="primary" id="next" type="button" hidden>Следен збор</button>
+        </div>
+      </section>
+
+      <section class="card screen finish" id="finish" hidden>
+        <span class="eyebrow">Играта заврши</span>
+        <h2 id="finishTitle">Браво, тим!</h2>
+        <div class="final-score" id="finalScore">0/10</div>
+        <p id="finishText">Ги проверивте зборовите со изговор и плескање.</p>
+        <div class="rule-strip">Кога делиме збор на слогови, го изговараме бавно и слушаме колку делови се изговараат со посебно издишување.</div>
+        <button class="primary" id="playAgain" type="button">Играј повторно</button>
+      </section>
+    </main>
+
+    <footer>Материјал за училишна употреба · Македонски јазик</footer>
+  </div>
+
+  <script>
+    const rounds = [
+      { word: "зајак", choices: [["за", "јак"], ["зај", "ак"]], answer: 0, note: "Точно е за · јак. Се слушаат два слога." },
+      { word: "лисица", choices: [["лис", "и", "ца"], ["ли", "си", "ца"]], answer: 1, note: "Точно е ли · си · ца. Се слушаат три слога." },
+      { word: "сака", choices: [["са", "ка"], ["сак", "а"]], answer: 0, note: "Точно е са · ка. Се слушаат два слога." },
+      { word: "планина", choices: [["пла", "ни", "на"], ["план", "и", "на"]], answer: 0, note: "Точно е пла · ни · на. Се слушаат три слога." },
+      { word: "училница", choices: [["у", "чил", "ни", "ца"], ["уч", "ил", "ни", "ца"]], answer: 0, note: "Точно е у · чил · ни · ца. Се слушаат четири слога." },
+      { word: "уво", choices: [["ув", "о"], ["у", "во"]], answer: 1, note: "Точно е у · во. Се слушаат два слога." },
+      { word: "рака", choices: [["ра", "ка"], ["рак", "а"]], answer: 0, note: "Точно е ра · ка. Се слушаат два слога." },
+      { word: "Марија", choices: [["Мар", "и", "ја"], ["Ма", "ри", "ја"]], answer: 1, note: "Точно е Ма · ри · ја. Се слушаат три слога." },
+      { word: "Скопје", choices: [["Скоп", "је"], ["Ско", "пје"]], answer: 0, note: "Точно е Скоп · је. Се слушаат два слога." },
+      { word: "телевизија", choices: [["те", "ле", "ви", "зи", "ја"], ["тел", "е", "ви", "зи", "ја"]], answer: 0, note: "Точно е те · ле · ви · зи · ја. Се слушаат пет слога." }
+    ];
+
+    const intro = document.querySelector("#intro");
+    const quiz = document.querySelector("#quiz");
+    const finish = document.querySelector("#finish");
+    const startButton = document.querySelector("#start");
+    const restartButton = document.querySelector("#restart");
+    const nextButton = document.querySelector("#next");
+    const playAgainButton = document.querySelector("#playAgain");
+    const fullscreenButton = document.querySelector("#fullscreen");
+    const roundLabel = document.querySelector("#roundLabel");
+    const turnLabel = document.querySelector("#turnLabel");
+    const progressBar = document.querySelector("#progressBar");
+    const scoreLabel = document.querySelector("#scoreLabel");
+    const wordLabel = document.querySelector("#word");
+    const choicesBox = document.querySelector("#choices");
+    const feedback = document.querySelector("#feedback");
+    const finalScore = document.querySelector("#finalScore");
+    const finishTitle = document.querySelector("#finishTitle");
+    const finishText = document.querySelector("#finishText");
+
+    let current = 0;
+    let firstTryScore = 0;
+    let attempts = 0;
+    let answered = false;
+
+    function show(screen) {
+      [intro, quiz, finish].forEach(item => { item.hidden = item !== screen; });
+    }
+
+    function startGame() {
+      current = 0;
+      firstTryScore = 0;
+      attempts = 0;
+      answered = false;
+      show(quiz);
+      renderRound();
+    }
+
+    function renderRound() {
+      const round = rounds[current];
+      answered = false;
+      attempts = 0;
+      roundLabel.textContent = `Збор ${current + 1} од ${rounds.length}`;
+      turnLabel.textContent = `На ред е ученик ${(current % 3) + 1}`;
+      progressBar.style.width = `${(current / rounds.length) * 100}%`;
+      scoreLabel.textContent = `Точно од првпат: ${firstTryScore}`;
+      wordLabel.textContent = round.word;
+      feedback.className = "feedback";
+      feedback.textContent = "Кажи го зборот бавно, плесни ги слоговите, па избери.";
+      nextButton.hidden = true;
+      choicesBox.replaceChildren();
+
+      round.choices.forEach((choice, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "choice";
+        button.setAttribute("aria-label", `Одговор ${index + 1}: ${choice.join(" па ")}`);
+
+        const wrapper = document.createElement("span");
+        wrapper.className = "syllables";
+        choice.forEach(part => {
+          const tile = document.createElement("span");
+          tile.className = "syllable";
+          tile.textContent = part;
+          wrapper.appendChild(tile);
+        });
+        button.appendChild(wrapper);
+        button.addEventListener("click", () => selectAnswer(index, button));
+        choicesBox.appendChild(button);
+      });
+    }
+
+    function selectAnswer(index, button) {
+      if (answered || button.disabled) return;
+      attempts += 1;
+      const round = rounds[current];
+
+      if (index !== round.answer) {
+        button.classList.add("wrong");
+        button.disabled = true;
+        feedback.className = "feedback bad";
+        feedback.innerHTML = "<strong>Обиди се повторно.</strong>Кажи го зборот побавно и плесни еднаш за секој слог.";
+        return;
+      }
+
+      answered = true;
+      if (attempts === 1) firstTryScore += 1;
+      const buttons = [...choicesBox.querySelectorAll("button")];
+      buttons.forEach((item, itemIndex) => {
+        item.disabled = true;
+        if (itemIndex === round.answer) item.classList.add("correct");
+      });
+      feedback.className = "feedback good";
+      feedback.innerHTML = `<strong>Точно!</strong>${round.note}`;
+      scoreLabel.textContent = `Точно од првпат: ${firstTryScore}`;
+      progressBar.style.width = `${((current + 1) / rounds.length) * 100}%`;
+      nextButton.textContent = current === rounds.length - 1 ? "Види резултат" : "Следен збор";
+      nextButton.hidden = false;
+      nextButton.focus();
+    }
+
+    function nextRound() {
+      if (!answered) return;
+      if (current < rounds.length - 1) {
+        current += 1;
+        renderRound();
+      } else {
+        endGame();
+      }
+    }
+
+    function endGame() {
+      finalScore.textContent = `${firstTryScore}/${rounds.length}`;
+      if (firstTryScore >= 9) {
+        finishTitle.textContent = "Одлична работа!";
+        finishText.textContent = "Речиси сите зборови ги поделивте правилно уште од првиот обид.";
+      } else if (firstTryScore >= 7) {
+        finishTitle.textContent = "Многу добро!";
+        finishText.textContent = "Ги препознавте слоговите. Повторете ги зборовите што беа потешки.";
+      } else {
+        finishTitle.textContent = "Обидете се уште еднаш";
+        finishText.textContent = "Кажувајте го секој збор бавно и плескајте за секој слог.";
+      }
+      show(finish);
+    }
+
+    async function toggleFullscreen() {
+      try {
+        if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+        else await document.exitFullscreen();
+      } catch (_) {
+        fullscreenButton.title = "Цел екран не е достапен";
+      }
+    }
+
+    startButton.addEventListener("click", startGame);
+    restartButton.addEventListener("click", startGame);
+    playAgainButton.addEventListener("click", startGame);
+    nextButton.addEventListener("click", nextRound);
+    fullscreenButton.addEventListener("click", toggleFullscreen);
+
+    document.addEventListener("keydown", event => {
+      if (!quiz.hidden && !answered && (event.key === "1" || event.key === "2")) {
+        const button = choicesBox.querySelectorAll("button")[Number(event.key) - 1];
+        if (button) selectAnswer(Number(event.key) - 1, button);
+      } else if (!quiz.hidden && answered && event.key === "Enter") {
+        nextRound();
+      }
+    });
+  </script>
+</body>
+</html>

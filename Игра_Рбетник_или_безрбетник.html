@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="mk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Рбетник или безрбетник</title>
+<style>
+:root{--navy:#153252;--blue:#247bb6;--sky:#e3f4fc;--yellow:#ffd95a;--green:#27855f;--mint:#e3f5eb;--red:#d84238;--coral:#fde8e4;--ink:#17202a;--line:#c9d7e3;--white:#fff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;min-height:100%;font-family:Arial,sans-serif;color:var(--ink);background:#f4f7fa;overscroll-behavior:none}body{min-height:100vh;touch-action:pan-y}
+header{min-height:82px;background:var(--navy);color:white;border-bottom:8px solid var(--yellow);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 24px}.brand{font-size:27px;font-weight:900}.tools{display:flex;gap:10px;align-items:center}.badge,.topbtn{font-size:18px;font-weight:900;border-radius:15px;padding:10px 15px}.badge{background:white;color:var(--navy)}.topbtn{border:2px solid white;color:white;background:transparent;cursor:pointer}
+main{max-width:1360px;margin:0 auto;padding:16px 24px 26px}.instruction{text-align:center;font-size:23px;color:var(--navy);font-weight:800;margin:3px 0 12px}.animal-bank{min-height:154px;background:white;border:2px solid var(--line);border-radius:22px;padding:12px;display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:10px}.card{width:142px;min-height:120px;border:3px solid var(--blue);border-radius:18px;background:white;color:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:grab;user-select:none;touch-action:none;box-shadow:0 4px 0 #a8c9de}.card:active{cursor:grabbing}.card.selected{outline:6px solid var(--yellow);transform:translateY(-3px)}.card.placed{border-color:var(--green);box-shadow:none;cursor:default}.card .icon{font-size:53px;line-height:1}.card .name{font-size:17px;font-weight:900;text-align:center}.zones{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:16px}.zone{min-height:330px;border:4px dashed;border-radius:26px;padding:14px;transition:.15s}.zone.v{background:var(--sky);border-color:var(--blue)}.zone.i{background:var(--coral);border-color:var(--red)}.zone.over{transform:scale(1.015);box-shadow:0 0 0 6px var(--yellow)}.zone h2{text-align:center;margin:2px 0 5px;font-size:33px}.zone.v h2{color:var(--blue)}.zone.i h2{color:var(--red)}.zone p{text-align:center;font-size:19px;font-weight:700;margin:0 0 10px}.placed-area{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;align-content:flex-start;min-height:220px}.placed-area .card{width:125px;min-height:105px}.feedback{min-height:54px;margin-top:12px;border-radius:15px;background:#e9eef3;text-align:center;padding:11px;font-size:21px;font-weight:800}.feedback.ok{background:var(--mint);color:#165c43}.feedback.no{background:var(--coral);color:#8b271f}.ghost{position:fixed;z-index:1000;pointer-events:none;opacity:.88;transform:translate(-50%,-50%) scale(1.05)}.finish{position:fixed;inset:0;background:#153252ee;display:flex;align-items:center;justify-content:center;z-index:2000}.finish-box{width:min(760px,90vw);background:white;border-radius:28px;text-align:center;padding:35px}.finish-box .cup{font-size:80px}.finish-box h2{font-size:46px;color:var(--navy);margin:6px}.finish-box p{font-size:25px}.finish-box button{border:0;border-radius:15px;background:var(--green);color:white;font-size:25px;font-weight:900;padding:15px 25px;cursor:pointer}
+@media(max-width:900px){header{align-items:flex-start;flex-direction:column}.zones{grid-template-columns:1fr}.card{width:118px;min-height:105px}.card .icon{font-size:44px}.zone{min-height:260px}}
+</style>
+</head>
+<body>
+<header><div class="brand">РБЕТНИК ИЛИ БЕЗРБЕТНИК?</div><div class="tools"><span class="badge" id="progress">0 / 10</span><button class="topbtn" onclick="resetGame()">↻ ОДНОВО</button><button class="topbtn" onclick="fullScreen()">⛶ ЦЕЛ ЕКРАН</button></div></header>
+<main>
+  <div class="instruction">Повлечи го животното во точната група. Можеш и да го допреш животното, па да го допреш полето.</div>
+  <section class="animal-bank" id="bank" aria-label="Животни за распоредување"></section>
+  <section class="zones">
+    <div class="zone v" data-group="v"><h2>РБЕТНИЦИ</h2><p>Имаат ’рбет во внатрешноста на телото</p><div class="placed-area" id="zone-v"></div></div>
+    <div class="zone i" data-group="i"><h2>БЕЗРБЕТНИЦИ</h2><p>Немаат ’рбет</p><div class="placed-area" id="zone-i"></div></div>
+  </section>
+  <div class="feedback" id="feedback">Избери животно.</div>
+</main>
+<script>
+const ANIMALS=[{"id":"dog","icon":"🐕","name":"КУЧЕ","group":"v"},{"id":"butterfly","icon":"🦋","name":"ПЕПЕРУТКА","group":"i"},{"id":"fish","icon":"🐟","name":"РИБА","group":"v"},{"id":"snail","icon":"🐌","name":"ПОЛЖАВ","group":"i"},{"id":"frog","icon":"🐸","name":"ЖАБА","group":"v"},{"id":"spider","icon":"🕷️","name":"ПАЈАК","group":"i"},{"id":"pigeon","icon":"🕊️","name":"ГУЛАБ","group":"v"},{"id":"worm","icon":"🪱","name":"ДОЖДОВЕН ЦРВ","group":"i"},{"id":"kangaroo","icon":"🦘","name":"КЕНГУР","group":"v"},{"id":"octopus","icon":"🐙","name":"ОКТОПОД","group":"i"}];
+let selected=null,placed=0,pointer=null,ghost=null,dragging=false;
+function fullScreen(){if(!document.fullscreenElement){document.documentElement.requestFullscreen?.()}else{document.exitFullscreen?.()}}
+function speak(text){if('speechSynthesis' in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='mk-MK';u.rate=.88;speechSynthesis.speak(u)}}
+function animalById(id){return ANIMALS.find(a=>a.id===id)}
+function cardHtml(a){return '<div class="card" data-id="'+a.id+'" tabindex="0" role="button" aria-label="'+a.name+'"><div class="icon" role="img">'+a.icon+'</div><div class="name">'+a.name+'</div></div>'}
+function attachCard(card){
+  card.addEventListener('pointerdown',startPointer);
+  card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();selectCard(card)}});
+}
+function selectCard(card){
+  if(card.classList.contains('placed'))return;
+  document.querySelectorAll('.card.selected').forEach(c=>c.classList.remove('selected'));
+  selected=card;card.classList.add('selected');
+  const a=animalById(card.dataset.id);document.getElementById('feedback').className='feedback';document.getElementById('feedback').textContent='Избрано: '+a.name+'. Сега допри ја точната група.';
+}
+function startPointer(e){
+  const card=e.currentTarget;if(card.classList.contains('placed'))return;
+  pointer={card,id:e.pointerId,x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY};dragging=false;
+  card.setPointerCapture?.(e.pointerId);e.preventDefault();
+  card.addEventListener('pointermove',movePointer);card.addEventListener('pointerup',endPointer,{once:true});card.addEventListener('pointercancel',endPointer,{once:true});
+}
+function movePointer(e){
+  if(!pointer||e.pointerId!==pointer.id)return;pointer.lastX=e.clientX;pointer.lastY=e.clientY;
+  if(!dragging&&Math.hypot(e.clientX-pointer.x,e.clientY-pointer.y)>9){
+    dragging=true;ghost=pointer.card.cloneNode(true);ghost.classList.add('ghost');ghost.classList.remove('selected');document.body.appendChild(ghost);
+  }
+  if(ghost){ghost.style.left=e.clientX+'px';ghost.style.top=e.clientY+'px';document.querySelectorAll('.zone').forEach(z=>z.classList.remove('over'));const z=document.elementFromPoint(e.clientX,e.clientY)?.closest('.zone');if(z)z.classList.add('over')}
+}
+function endPointer(e){
+  if(!pointer)return;const card=pointer.card;card.removeEventListener('pointermove',movePointer);document.querySelectorAll('.zone').forEach(z=>z.classList.remove('over'));
+  if(dragging){const z=document.elementFromPoint(pointer.lastX,pointer.lastY)?.closest('.zone');if(z)tryPlace(card,z.dataset.group)}else{selectCard(card)}
+  ghost?.remove();ghost=null;pointer=null;dragging=false;
+}
+function tryPlace(card,group){
+  if(!card||card.classList.contains('placed'))return;const a=animalById(card.dataset.id),fb=document.getElementById('feedback');
+  if(a.group===group){
+    card.classList.remove('selected');card.classList.add('placed');card.removeEventListener('pointerdown',startPointer);document.getElementById('zone-'+group).appendChild(card);selected=null;placed++;document.getElementById('progress').textContent=placed+' / '+ANIMALS.length;fb.className='feedback ok';fb.textContent='✓ '+a.name+' е '+(group==='v'?'рбетник затоа што има ’рбет.':'безрбетник затоа што нема ’рбет.');speak(fb.textContent);if(placed===ANIMALS.length)setTimeout(showFinish,500);
+  }else{
+    card.classList.add('selected');selected=card;fb.className='feedback no';fb.textContent='Обиди се повторно. Провери: има ли '+a.name.toLowerCase()+' ’рбет во телото?';speak(fb.textContent);card.animate([{transform:'translateX(-8px)'},{transform:'translateX(8px)'},{transform:'translateX(0)'}],{duration:280});
+  }
+}
+function showFinish(){document.body.insertAdjacentHTML('beforeend','<div class="finish"><div class="finish-box"><div class="cup">🏆</div><h2>Сите се на точното место!</h2><p>Кажи го правилото: има ’рбет — рбетник; нема ’рбет — безрбетник.</p><button onclick="resetGame()">ИГРАЈ ОДНОВО</button></div></div>')}
+function resetGame(){document.querySelector('.finish')?.remove();placed=0;selected=null;document.getElementById('progress').textContent='0 / '+ANIMALS.length;document.getElementById('feedback').className='feedback';document.getElementById('feedback').textContent='Избери животно.';const bank=document.getElementById('bank');bank.innerHTML=ANIMALS.map(cardHtml).join('');bank.querySelectorAll('.card').forEach(attachCard);document.getElementById('zone-v').innerHTML='';document.getElementById('zone-i').innerHTML=''}
+document.querySelectorAll('.zone').forEach(z=>z.addEventListener('click',()=>{if(selected)tryPlace(selected,z.dataset.group)}));
+resetGame();
+</script>
+</body></html>
